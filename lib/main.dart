@@ -1,8 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'question.dart';
+import 'quiz_brain.dart';
 
 void main() => runApp(Quizzler());
+
+QuizBrain quizBrain = QuizBrain();
 
 class Quizzler extends StatelessWidget {
   @override
@@ -26,16 +30,6 @@ class QuizPage extends StatefulWidget {
   _QuizPageState createState() => _QuizPageState();
 }
 
-class Question {
-  bool answer;
-  String question;
-
-  Question({answer, question}) {
-    this.answer = answer;
-    this.question = question;
-  }
-}
-
 List<Widget> initialScoreKeeper = [
   SizedBox(
     height: 40,
@@ -46,57 +40,22 @@ List<Widget> initialScoreKeeper = [
 class _QuizPageState extends State<QuizPage> {
   Random r = Random();
   List<Widget> scoreKeeper = initialScoreKeeper;
-
-  List<Question> questions = [
-    new Question(
-      question: 'You can lead a cow down stairs but not up stairs.',
-      answer: false,
-    ),
-    new Question(
-      question:
-          "The letter 'e' is the most common letter in the English language.",
-      answer: true,
-    ),
-    new Question(
-      question: "Approximately one quarter of human bones are in the feet.",
-      answer: true,
-    ),
-    new Question(
-      question:
-          "The primary colors of pigment (sometimes called the subtractive primary colors) are red, yellow, and blue.",
-      answer: false,
-    ),
-    new Question(
-      question: "Zero is both an even number and an odd number.",
-      answer: false,
-    ),
-    new Question(
-      question:
-          "There exist three directions such that, by moving in those three directions, it is possible to go anywhere on a two-dimensional surface.",
-      answer: true,
-    ),
-    new Question(
-      question: 'A slug\'s blood is green.',
-      answer: true,
-    )
-  ];
   int currentQuestionIndex = 0;
   int scoreCount = 0;
 
-  Widget getNextValue(isTrue, question) {
-    return isTrue
+  Widget getScoreIcon(isCorrect, question) {
+    return isCorrect
         ? Icon(Icons.check, color: Colors.green, semanticLabel: "correct")
         : Icon(Icons.close, color: Colors.red, semanticLabel: "wrong");
   }
 
   void handleCheck(value, question) {
-    if (currentQuestionIndex > questions.length - 1) {
+    if (currentQuestionIndex > quizBrain.qSize() - 1) {
       return;
     }
     bool isCorrect = value == question.answer;
-    Widget nextValue = getNextValue(isCorrect, question);
     setState(() {
-      scoreKeeper.add(nextValue);
+      scoreKeeper.add(getScoreIcon(isCorrect, question));
       currentQuestionIndex++;
       scoreCount += isCorrect ? 1 : 0;
     });
@@ -107,17 +66,23 @@ class _QuizPageState extends State<QuizPage> {
       currentQuestionIndex = 0;
       scoreCount = 0;
       scoreKeeper.clear();
-      scoreKeeper = initialScoreKeeper;
+      scoreKeeper.add(
+        SizedBox(
+          height: 40,
+          width: 1,
+        ),
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    bool _gameOver = (currentQuestionIndex == questions.length);
-    Question currentQuestion =
-        _gameOver ? questions.last : questions[currentQuestionIndex];
+    bool _gameOver = (currentQuestionIndex == quizBrain.qSize());
+    Question currentQuestion = _gameOver
+        ? quizBrain.getLast()
+        : quizBrain.getQuestion(currentQuestionIndex);
 
-    double percent = (scoreCount / questions.length * 1.0) * 100;
+    double percent = (scoreCount / quizBrain.qSize() * 1.0) * 100;
 
     Widget gameOverStatement = Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -127,7 +92,7 @@ class _QuizPageState extends State<QuizPage> {
               fontSize: 25.0,
               color: Colors.white,
             )),
-        Text('$scoreCount out of ${questions.length}',
+        Text('$scoreCount out of ${quizBrain.qSize()}',
             style: TextStyle(
               fontSize: 25.0,
               color: Colors.white,
@@ -157,6 +122,26 @@ class _QuizPageState extends State<QuizPage> {
             ),
           ),
         ),
+        _gameOver
+            ? Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(15.0),
+                  child: FlatButton(
+                    color: Colors.blueAccent,
+                    child: Text(
+                      'Reset',
+                      style: TextStyle(
+                        fontSize: 20.0,
+                        color: Colors.white,
+                      ),
+                    ),
+                    onPressed: handleReset,
+                  ),
+                ),
+              )
+            : SizedBox(
+                height: 0,
+              ),
         Expanded(
           child: Padding(
             padding: EdgeInsets.all(15.0),
@@ -198,26 +183,6 @@ class _QuizPageState extends State<QuizPage> {
         Row(
           children: scoreKeeper,
         ),
-        _gameOver
-            ? Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(15.0),
-                  child: FlatButton(
-                    color: Colors.blueAccent,
-                    child: Text(
-                      'Reset',
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        color: Colors.white,
-                      ),
-                    ),
-                    onPressed: handleReset,
-                  ),
-                ),
-              )
-            : SizedBox(
-                height: 0,
-              ),
       ],
     );
   }
