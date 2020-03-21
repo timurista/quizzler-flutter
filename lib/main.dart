@@ -81,27 +81,31 @@ class _QuizPageState extends State<QuizPage> {
     )
   ];
   int currentQuestionIndex = 0;
+  int scoreCount = 0;
 
   Widget getNextValue(isTrue, question) {
     return isTrue
-        ? Icon(Icons.check, color: Colors.green)
-        : Icon(Icons.close, color: Colors.red);
+        ? Icon(Icons.check, color: Colors.green, semanticLabel: "correct")
+        : Icon(Icons.close, color: Colors.red, semanticLabel: "wrong");
   }
 
   void handleCheck(value, question) {
-    if (scoreKeeper.length >= questions.length) {
+    if (currentQuestionIndex > questions.length - 1) {
       return;
     }
-    Widget nextValue = getNextValue(value == question.answer, question);
+    bool isCorrect = value == question.answer;
+    Widget nextValue = getNextValue(isCorrect, question);
     setState(() {
       scoreKeeper.add(nextValue);
       currentQuestionIndex++;
+      scoreCount += isCorrect ? 1 : 0;
     });
   }
 
   void handleReset() {
     setState(() {
       currentQuestionIndex = 0;
+      scoreCount = 0;
       scoreKeeper.clear();
       scoreKeeper = initialScoreKeeper;
     });
@@ -109,8 +113,27 @@ class _QuizPageState extends State<QuizPage> {
 
   @override
   Widget build(BuildContext context) {
-    Question currentQuestion = questions[currentQuestionIndex];
-    bool _gameOver = (currentQuestionIndex == questions.length - 1);
+    bool _gameOver = (currentQuestionIndex == questions.length);
+    Question currentQuestion =
+        _gameOver ? questions.last : questions[currentQuestionIndex];
+
+    double percent = (scoreCount / questions.length * 1.0) * 100;
+
+    Widget gameOverStatement = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Text('Final Score: ${percent.truncateToDouble()}%',
+            style: TextStyle(
+              fontSize: 25.0,
+              color: Colors.white,
+            )),
+        Text('$scoreCount out of ${questions.length}',
+            style: TextStyle(
+              fontSize: 25.0,
+              color: Colors.white,
+            )),
+      ],
+    );
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -121,14 +144,16 @@ class _QuizPageState extends State<QuizPage> {
           child: Padding(
             padding: EdgeInsets.all(10.0),
             child: Center(
-              child: Text(
-                currentQuestion.question,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 25.0,
-                  color: Colors.white,
-                ),
-              ),
+              child: _gameOver
+                  ? gameOverStatement
+                  : Text(
+                      currentQuestion.question,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 25.0,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ),
