@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 void main() => runApp(Quizzler());
@@ -24,9 +26,92 @@ class QuizPage extends StatefulWidget {
   _QuizPageState createState() => _QuizPageState();
 }
 
+class Question {
+  bool answer;
+  String question;
+
+  Question({answer, question}) {
+    this.answer = answer;
+    this.question = question;
+  }
+}
+
+List<Widget> initialScoreKeeper = [
+  SizedBox(
+    height: 40,
+    width: 1,
+  )
+];
+
 class _QuizPageState extends State<QuizPage> {
+  Random r = Random();
+  List<Widget> scoreKeeper = initialScoreKeeper;
+
+  List<Question> questions = [
+    new Question(
+      question: 'You can lead a cow down stairs but not up stairs.',
+      answer: false,
+    ),
+    new Question(
+      question:
+          "The letter 'e' is the most common letter in the English language.",
+      answer: true,
+    ),
+    new Question(
+      question: "Approximately one quarter of human bones are in the feet.",
+      answer: true,
+    ),
+    new Question(
+      question:
+          "The primary colors of pigment (sometimes called the subtractive primary colors) are red, yellow, and blue.",
+      answer: false,
+    ),
+    new Question(
+      question: "Zero is both an even number and an odd number.",
+      answer: false,
+    ),
+    new Question(
+      question:
+          "There exist three directions such that, by moving in those three directions, it is possible to go anywhere on a two-dimensional surface.",
+      answer: true,
+    ),
+    new Question(
+      question: 'A slug\'s blood is green.',
+      answer: true,
+    )
+  ];
+  int currentQuestionIndex = 0;
+
+  Widget getNextValue(isTrue, question) {
+    return isTrue
+        ? Icon(Icons.check, color: Colors.green)
+        : Icon(Icons.close, color: Colors.red);
+  }
+
+  void handleCheck(value, question) {
+    if (scoreKeeper.length >= questions.length) {
+      return;
+    }
+    Widget nextValue = getNextValue(value == question.answer, question);
+    setState(() {
+      scoreKeeper.add(nextValue);
+      currentQuestionIndex++;
+    });
+  }
+
+  void handleReset() {
+    setState(() {
+      currentQuestionIndex = 0;
+      scoreKeeper.clear();
+      scoreKeeper = initialScoreKeeper;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    Question currentQuestion = questions[currentQuestionIndex];
+    bool _gameOver = (currentQuestionIndex == questions.length - 1);
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -37,7 +122,7 @@ class _QuizPageState extends State<QuizPage> {
             padding: EdgeInsets.all(10.0),
             child: Center(
               child: Text(
-                'This is where the question text will go.',
+                currentQuestion.question,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 25.0,
@@ -53,6 +138,7 @@ class _QuizPageState extends State<QuizPage> {
             child: FlatButton(
               textColor: Colors.white,
               color: Colors.green,
+              disabledColor: Colors.grey,
               child: Text(
                 'True',
                 style: TextStyle(
@@ -60,9 +146,8 @@ class _QuizPageState extends State<QuizPage> {
                   fontSize: 20.0,
                 ),
               ),
-              onPressed: () {
-                //The user picked true.
-              },
+              onPressed:
+                  _gameOver ? null : () => handleCheck(true, currentQuestion),
             ),
           ),
         ),
@@ -70,7 +155,9 @@ class _QuizPageState extends State<QuizPage> {
           child: Padding(
             padding: EdgeInsets.all(15.0),
             child: FlatButton(
+              textColor: Colors.white,
               color: Colors.red,
+              disabledColor: Colors.grey,
               child: Text(
                 'False',
                 style: TextStyle(
@@ -78,20 +165,35 @@ class _QuizPageState extends State<QuizPage> {
                   color: Colors.white,
                 ),
               ),
-              onPressed: () {
-                //The user picked false.
-              },
+              onPressed:
+                  _gameOver ? null : () => handleCheck(false, currentQuestion),
             ),
           ),
         ),
-        //TODO: Add a Row here as your score keeper
+        Row(
+          children: scoreKeeper,
+        ),
+        _gameOver
+            ? Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(15.0),
+                  child: FlatButton(
+                    color: Colors.blueAccent,
+                    child: Text(
+                      'Reset',
+                      style: TextStyle(
+                        fontSize: 20.0,
+                        color: Colors.white,
+                      ),
+                    ),
+                    onPressed: handleReset,
+                  ),
+                ),
+              )
+            : SizedBox(
+                height: 0,
+              ),
       ],
     );
   }
 }
-
-/*
-question1: 'You can lead a cow down stairs but not up stairs.', false,
-question2: 'Approximately one quarter of human bones are in the feet.', true,
-question3: 'A slug\'s blood is green.', true,
-*/
